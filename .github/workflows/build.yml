@@ -5,11 +5,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Unzip project
+      - name: List repo files
+        run: ls -la
+      - name: Extract project
         run: |
           python3 - <<'EOF'
-          import zipfile, os
-          z = zipfile.ZipFile('FischMacro.zip')
+          import zipfile, os, glob, sys
+          zips = glob.glob('*.zip')
+          print('zip files found:', zips)
+          if not zips:
+              sys.exit('NO ZIP FILE in the repo root. The zip upload did not work.')
+          z = zipfile.ZipFile(zips[0])
           for i in z.infolist():
               if i.is_dir():
                   continue
@@ -17,8 +23,10 @@ jobs:
               os.makedirs(os.path.dirname(p), exist_ok=True)
               open(p, 'wb').write(z.read(i))
           EOF
-          mv "$(dirname "$(find proj -name settings.gradle.kts | head -1)")" project
-          ls -R project | head -50
+          find proj -type f | head -50
+          S=$(find proj -name settings.gradle.kts | head -1)
+          if [ -z "$S" ]; then echo "settings.gradle.kts NOT FOUND inside the zip"; exit 1; fi
+          mv "$(dirname "$S")" project
       - uses: actions/setup-java@v4
         with: { distribution: temurin, java-version: 17 }
       - uses: android-actions/setup-android@v3
