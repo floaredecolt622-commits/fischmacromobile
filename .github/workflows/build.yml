@@ -25,7 +25,13 @@ jobs:
           if [ "$D" != "proj" ]; then mv "$D" project; else mv proj project; fi
       - uses: actions/setup-java@v4
         with: { distribution: temurin, java-version: 17 }
-      - uses: android-actions/setup-android@v3
+      - name: Prepare Android SDK
+        run: |
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          SDKM=$(find "$ANDROID_HOME/cmdline-tools" -name sdkmanager | head -1)
+          echo "sdkmanager at: $SDKM"
+          yes | "$SDKM" --licenses > /dev/null || true
+          "$SDKM" "platforms;android-34" "build-tools;34.0.0"
       - uses: gradle/actions/setup-gradle@v3
         with: { gradle-version: "8.5" }
       - name: Build
